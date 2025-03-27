@@ -9,6 +9,15 @@ const API_KEY = "AIzaSyAeU1jYORhUqR5C6vKlOM8bLWg9uwn4eE4";
 // Using the experimental model
 const GEMINI_MODEL = "gemini-2.0-flash-exp-image-generation";
 
+// Add mood images data
+const moodImages = [
+  { src: "/mood1.jpeg", theme: "theme-pastel", position: "mood-1" },
+  { src: "/mood2.jpeg", theme: "theme-cyber", position: "mood-2" },
+  { src: "/mood3.jpeg", theme: "theme-fantasy", position: "mood-3" },
+  { src: "/mood4.jpeg", theme: "theme-classic", position: "mood-4" },
+  { src: "/mood5.jpeg", theme: "theme-dark", position: "mood-5" },
+];
+
 type Message = {
   content: string;
   isUser: boolean;
@@ -17,26 +26,84 @@ type Message = {
   role?: "user" | "model";
 };
 
+// Pre-built waifu personalities
+const prebuiltWaifus = [
+  {
+    name: "Sakura-chan",
+    personality: "Sweet and caring, loves to bake and help others",
+    theme: "theme-pastel",
+    image: "/mood1.jpeg"
+  },
+  {
+    name: "Neo-chan",
+    personality: "Tech-savvy and confident, with a hint of tsundere",
+    theme: "theme-cyber",
+    image: "/mood2.jpeg"
+  },
+  {
+    name: "Luna-chan",
+    personality: "Mystical and ethereal, speaks in riddles and magic references",
+    theme: "theme-fantasy",
+    image: "/mood3.jpeg"
+  },
+  {
+    name: "Yuki-chan",
+    personality: "Energetic and cheerful, classic anime school girl",
+    theme: "theme-classic",
+    image: "/mood4.jpeg"
+  },
+  {
+    name: "Raven-chan",
+    personality: "Mysterious and elegant, with a dark and alluring aura",
+    theme: "theme-dark",
+    image: "/mood5.jpeg"
+  }
+];
+
 export default function Home() {
   const [theme, setTheme] = useState("theme-pastel");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      content: "Hello! I'm your waifu assistant. How can I help you today?",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
+  const [showWizard, setShowWizard] = useState(true);
+  const [waifuName, setWaifuName] = useState("AI-chan");
+  const [waifuPersonality, setWaifuPersonality] = useState("");
+  const [customWaifu, setCustomWaifu] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [showImageGen, setShowImageGen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const waifuName = "AI-chan";
+  // Add active mood state
+  const [activeMood, setActiveMood] = useState(0);
 
   // Auto scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Initialize waifu on wizard completion
+  const initializeWaifu = (name: string, personality: string, theme: string) => {
+    setWaifuName(name);
+    setWaifuPersonality(personality);
+    changeTheme(theme);
+    setShowWizard(false);
+    setMessages([
+      {
+        content: `Hello! I'm ${name}! ${personality} How can I help you today?`,
+        isUser: false,
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  // Select pre-built waifu
+  const selectPrebuiltWaifu = (waifu: typeof prebuiltWaifus[0]) => {
+    initializeWaifu(waifu.name, waifu.personality, waifu.theme);
+  };
+
+  // Create custom waifu
+  const createCustomWaifu = (name: string, personality: string, theme: string) => {
+    initializeWaifu(name, personality, theme);
+  };
 
   // Generate a response from Gemini API
   const generateGeminiResponse = async (userInput: string) => {
@@ -264,10 +331,117 @@ export default function Home() {
   const changeTheme = (newTheme: string) => {
     setTheme(newTheme);
     document.body.className = newTheme;
+    // Update active mood based on theme
+    const moodIndex = moodImages.findIndex(mood => mood.theme === newTheme);
+    if (moodIndex !== -1) {
+      setActiveMood(moodIndex);
+    }
   };
 
   return (
     <div className={`${theme}`}>
+      {/* Waifu Setup Wizard */}
+      {showWizard && (
+        <div className="wizard-overlay">
+          <div className="wizard-container">
+            <h2 className="wizard-title">Welcome to MyWaifu AI!</h2>
+            <div className="wizard-content">
+              <div className="wizard-options">
+                <button 
+                  className={`wizard-option ${!customWaifu ? 'active' : ''}`}
+                  onClick={() => setCustomWaifu(false)}
+                >
+                  Choose Pre-built Waifu
+                </button>
+                <button 
+                  className={`wizard-option ${customWaifu ? 'active' : ''}`}
+                  onClick={() => setCustomWaifu(true)}
+                >
+                  Create Custom Waifu
+                </button>
+              </div>
+
+              {!customWaifu ? (
+                <div className="prebuilt-waifus">
+                  {prebuiltWaifus.map((waifu, index) => (
+                    <div 
+                      key={index} 
+                      className="waifu-card"
+                      onClick={() => selectPrebuiltWaifu(waifu)}
+                    >
+                      <Image
+                        src={waifu.image}
+                        alt={waifu.name}
+                        width={150}
+                        height={150}
+                        className="waifu-preview"
+                      />
+                      <h3>{waifu.name}</h3>
+                      <p>{waifu.personality}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="custom-waifu-form">
+                  <input
+                    type="text"
+                    placeholder="Enter Waifu Name"
+                    value={waifuName}
+                    onChange={(e) => setWaifuName(e.target.value)}
+                    className="custom-input"
+                  />
+                  <textarea
+                    placeholder="Describe your waifu's personality..."
+                    value={waifuPersonality}
+                    onChange={(e) => setWaifuPersonality(e.target.value)}
+                    className="custom-input"
+                    rows={4}
+                  />
+                  <div className="theme-selector">
+                    {moodImages.map((mood, index) => (
+                      <button
+                        key={index}
+                        className={`theme-button theme-button-${mood.theme.replace('theme-', '')}`}
+                        onClick={() => changeTheme(mood.theme)}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    className="create-button"
+                    onClick={() => createCustomWaifu(waifuName, waifuPersonality, theme)}
+                    disabled={!waifuName || !waifuPersonality}
+                  >
+                    Create My Waifu
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update mood images container */}
+      <div className="mood-images-container">
+        {moodImages.map((mood, index) => (
+          <div
+            key={index}
+            className={`mood-image ${mood.position} ${index === activeMood ? 'active' : ''}`}
+            onClick={() => changeTheme(mood.theme)}
+            style={{
+              transform: `${mood.position === 'mood-3' ? 'translateY(-50%)' : ''} rotate(${Math.random() * 6 - 3}deg)`
+            }}
+          >
+            <Image
+              src={mood.src}
+              alt={`Mood ${index + 1}`}
+              width={200}
+              height={200}
+              priority={true}
+            />
+          </div>
+        ))}
+      </div>
+
       <div className="chat-container">
         <div className="chat-header">
           MyWaifu AI - {waifuName}

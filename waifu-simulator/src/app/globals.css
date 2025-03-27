@@ -11,7 +11,7 @@
   --pastel-secondary: #D8BFD8;  /* Light Lavender */
   --pastel-accent: #87CEEB;     /* Sky Blue */
   --pastel-background: #FFF5EE; /* Cream White */
-  --pastel-text: #4B0082;       /* Dark Purple */
+  --pastel-text: #daa6ff;       /* Dark Purple */
   --pastel-gradient-1: #FFB6C1; /* Soft Pink */
   --pastel-gradient-2: #D8BFD8; /* Light Lavender */
   --pastel-gradient-3: #87CEEB; /* Sky Blue */
@@ -41,7 +41,7 @@
   --classic-secondary: #69C3FF; /* Sky Blue */
   --classic-accent: #FFD700;    /* Lemon Yellow */
   --classic-background: #F8F8FF; /* Soft White */
-  --classic-text: #2C3E50;      /* Dark Navy */
+  --classic-text: #88b9eb;      /* Dark Navy */
   --classic-gradient-1: #FF3B3F; /* Bright Red */
   --classic-gradient-2: #69C3FF; /* Sky Blue */
   --classic-gradient-3: #FFD700; /* Lemon Yellow */
@@ -178,7 +178,7 @@ body::before {
 
 /* Chat UI Styles */
 .chat-container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
   height: 100vh;
@@ -187,6 +187,11 @@ body::before {
   position: relative;
   z-index: 1;
   overflow-y: auto;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .chat-header {
@@ -437,4 +442,232 @@ body::before {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mood Images Styles */
+.mood-images-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mood-image {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  opacity: 0.7;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.mood-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.mood-image:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--primary);
+}
+
+.mood-image:hover img {
+  transform: scale(1.1);
+}
+
+/* Mood Image Positions */
+.mood-1 {
+  top: 5%;
+  right: 5%;
+  transform: rotate(5deg);
+}
+
+.mood-2 {
+  bottom: 10%;
+  right: 8%;
+  transform: rotate(-3deg);
+}
+
+.mood-3 {
+  top: 50%;
+  left: 5%;
+  transform: translateY(-50%) rotate(2deg);
+}
+
+.mood-4 {
+  top: 10%;
+  left: 5%;
+  transform: rotate(-5deg);
+}
+
+.mood-5 {
+  bottom: 8%;
+  left: 5%;
+  transform: rotate(4deg);
+}
+
+.mood-image.active {
+  opacity: 1;
+  transform: scale(1.1);
+  z-index: 1;
+  border: 2px solid var(--primary);
+}
+
+/* Waifu Setup Wizard Styles */
+.wizard-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.wizard-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+.wizard-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.wizard-options {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.wizard-option {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.wizard-option.active,
+.wizard-option:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.prebuilt-waifus {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.waifu-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.waifu-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--primary);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.waifu-preview {
+  width: 150px;
+  height: 150px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  object-fit: cover;
+}
+
+.waifu-card h3 {
+  color: var(--primary);
+  margin: 0.5rem 0;
+}
+
+.waifu-card p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.custom-waifu-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.custom-input {
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--foreground);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.custom-input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.create-button {
+  padding: 1rem 2rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.create-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.create-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
