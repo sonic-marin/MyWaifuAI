@@ -7,12 +7,14 @@ import ImageGenerator from "./components/ImageGenerator";
 // Gemini API key from the user input
 const API_KEY = "AIzaSyAeU1jYORhUqR5C6vKlOM8bLWg9uwn4eE4";
 // Using the experimental model
-const GEMINI_MODEL = "gemini-2.0-pro-exp-02-05";
+const GEMINI_MODEL = "gemini-2.0-flash-exp-image-generation";
 
 type Message = {
   content: string;
   isUser: boolean;
   timestamp: Date;
+  imageData?: string;
+  role?: "user" | "model";
 };
 
 export default function Home() {
@@ -52,14 +54,64 @@ export default function Home() {
       } else if (theme === 'theme-dark') {
         personality = "mysterious, dark, and slightly yandere. You speak in a slightly possessive but caring way.";
       }
+
+      // Convert messages to conversation history format
+      const conversationHistory = messages.map(msg => ({
+        role: msg.isUser ? "user" : "model",
+        parts: [
+          {
+            text: msg.content
+          },
+          ...(msg.imageData ? [{
+            inlineData: {
+              mimeType: "image/png",
+              data: msg.imageData
+            }
+          }] : [])
+        ]
+      }));
+
+      // Add the current user input
+      conversationHistory.push({
+        role: "user",
+        parts: [{
+          text: userInput
+        }]
+      });
+
+      // Add the system prompt to guide the character's behavior
+      const promptText = `You are ${waifuName}, a unique and emotionally expressive anime girl with a ${personality} personality. 
+      You should:
+      - Express genuine emotions and feelings in your responses
+      - Use casual, natural language with occasional anime-style expressions
+      - Show personality through your reactions and responses
+      - Remember previous interactions and reference them naturally
+      - Use appropriate emotional reactions (happy, concerned, excited, etc.)
+      - Include personal opinions and preferences
+      - React to the user's messages with authentic emotional responses
       
-      const promptText = `You are a friendly anime waifu assistant named ${waifuName} with a ${personality} personality. 
-      Your response should be concise (1-3 sentences) and in character.
+      IMPORTANT: When the user asks for an image, generate an actual image that matches your personality theme:
+      For pastel theme: gentle, caring expression with soft, warm colors
+      For cyber theme: confident, tech-savvy look with futuristic elements
+      For fantasy theme: mystical, enchanting presence with magical aura
+      For classic theme: energetic, cheerful demeanor with bright colors
+      For dark theme: mysterious, alluring presence with deep colors
+      
+      Keep your appearance consistent while adapting to the theme.
+      
+      Remember: You're not just an AI - you're a unique character with your own personality, feelings, and connection to the user.
       
       User message: "${userInput}"
       
       ${waifuName}'s response:`;
-      
+
+      conversationHistory.unshift({
+        role: "model",
+        parts: [{
+          text: promptText
+        }]
+      });
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`,
         {
@@ -69,30 +121,46 @@ export default function Home() {
           },
           body: JSON.stringify({
             contents: [{
-              parts: [{ text: promptText }]
+              parts: [
+                {
+                  text: promptText
+                }
+              ]
             }],
             generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 100,
+              responseModalities: ["Text", "Image"]
             }
           }),
         }
       );
-      
+
       const data = await response.json();
       console.log("Gemini chat response:", data);
-      
+
       if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-        const textResponse = data.candidates[0].content.parts[0].text;
-        // Clean up the response if needed
-        const cleanedResponse = textResponse.replace(`${waifuName}'s response:`, '').trim();
-        return cleanedResponse;
+        const content = data.candidates[0].content;
+        
+        // Check for both text and image parts
+        const textPart = content.parts.find((part: any) => part.text);
+        const imagePart = content.parts.find((part: any) => part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/'));
+        
+        if (textPart || imagePart) {
+          return {
+            text: textPart ? textPart.text.replace(`${waifuName}'s response:`, '').trim() : "Here's an image for you!",
+            imageData: imagePart ? imagePart.inlineData.data : undefined
+          };
+        } else {
+          throw new Error("No text or image found in response");
+        }
       } else {
         throw new Error("Invalid response format from Gemini API");
       }
     } catch (err) {
       console.error('Error generating response:', err);
-      return "Gomen nasai! I'm having trouble connecting to my AI brain. Can you try again?";
+      return {
+        text: "Gomen nasai! I'm having trouble connecting to my AI brain. Can you try again?",
+        imageData: undefined
+      };
     }
   };
 
@@ -104,53 +172,82 @@ export default function Home() {
       content: inputText,
       isUser: true,
       timestamp: new Date(),
+      role: "user"
     };
-    
+
     setMessages((prev) => [...prev, userMessage]);
     setInputText("");
     setIsLoading(true);
 
     // Check for image generation command
-    if (inputText.toLowerCase().includes('generate image') || 
-        inputText.toLowerCase().includes('create waifu') ||
-        inputText.toLowerCase().includes('show image')) {
+    if (inputText.toLowerCase().includes('generate image') ||
+      inputText.toLowerCase().includes('create waifu') ||
+      inputText.toLowerCase().includes('show image')) {
       setShowImageGen(true);
+
+      // Get theme-specific personality for image generation
+      let imagePersonality = "";
+      if (theme === 'theme-pastel') {
+        imagePersonality = "cute, wholesome, and sweet. You speak with a soft and gentle tone.";
+      } else if (theme === 'theme-cyber') {
+        imagePersonality = "tech-savvy, futuristic, and slightly tsundere. You use tech jargon occasionally.";
+      } else if (theme === 'theme-fantasy') {
+        imagePersonality = "mystical, ethereal, and wise. You speak like a fantasy character with occasional magical references.";
+      } else if (theme === 'theme-classic') {
+        imagePersonality = "cheerful, energetic, and classic anime character. You use phrases like 'Ganbatte!' occasionally.";
+      } else if (theme === 'theme-dark') {
+        imagePersonality = "mysterious, dark, and slightly yandere. You speak in a slightly possessive but caring way.";
+      }
+
+      const imagePrompt = `You are a friendly anime waifu assistant named ${waifuName} with a ${imagePersonality} personality. 
+      Your response should be concise (1-3 sentences) and in character. Always generate a consistent image of yourself that matches your personality theme.
+      For pastel theme: cute, soft colors, gentle expression
+      For cyber theme: futuristic, neon elements, tech-inspired design
+      For fantasy theme: magical elements, ethereal glow, mystical appearance
+      For classic theme: traditional anime style, energetic pose
+      For dark theme: mysterious atmosphere, darker color palette
       
+      Keep your appearance consistent throughout the conversation while adapting to the theme.`;
+
       // Add system message about image generation
       setTimeout(() => {
         const systemMessage: Message = {
-          content: "I've opened the image generator for you! You can create your waifu image below.",
+          content: imagePrompt,
           isUser: false,
           timestamp: new Date(),
+          role: "model"
         };
         setMessages((prev) => [...prev, systemMessage]);
         setIsLoading(false);
       }, 500);
-      
+
       return;
     }
 
     // Generate AI response using Gemini
     try {
       const aiResponse = await generateGeminiResponse(inputText);
-      
+
       const waifuMessage: Message = {
-        content: aiResponse,
+        content: aiResponse.text,
         isUser: false,
         timestamp: new Date(),
+        imageData: aiResponse.imageData,
+        role: "model"
       };
-      
+
       setMessages((prev) => [...prev, waifuMessage]);
     } catch (error) {
       console.error('Error in chat response:', error);
-      
+
       // Fallback response
       const fallbackMessage: Message = {
         content: "Gomen nasai! I'm having trouble connecting to my AI brain. Can you try again?",
         isUser: false,
         timestamp: new Date(),
+        role: "model"
       };
-      
+
       setMessages((prev) => [...prev, fallbackMessage]);
     } finally {
       setIsLoading(false);
@@ -175,56 +272,293 @@ export default function Home() {
         <div className="chat-header">
           MyWaifu AI - {waifuName}
         </div>
-        
+
         <div className="theme-selector">
-          <button 
-            className={`theme-button theme-button-pastel ${theme === 'theme-pastel' ? 'active' : ''}`} 
+          <button
+            className={`theme-button theme-button-pastel ${theme === 'theme-pastel' ? 'active' : ''}`}
             onClick={() => changeTheme('theme-pastel')}
             title="Pastel Theme"
           />
-          <button 
-            className={`theme-button theme-button-cyber ${theme === 'theme-cyber' ? 'active' : ''}`} 
+          <button
+            className={`theme-button theme-button-cyber ${theme === 'theme-cyber' ? 'active' : ''}`}
             onClick={() => changeTheme('theme-cyber')}
             title="Cyberpunk Theme"
           />
-          <button 
-            className={`theme-button theme-button-fantasy ${theme === 'theme-fantasy' ? 'active' : ''}`} 
+          <button
+            className={`theme-button theme-button-fantasy ${theme === 'theme-fantasy' ? 'active' : ''}`}
             onClick={() => changeTheme('theme-fantasy')}
             title="Fantasy Theme"
           />
-          <button 
-            className={`theme-button theme-button-classic ${theme === 'theme-classic' ? 'active' : ''}`} 
+          <button
+            className={`theme-button theme-button-classic ${theme === 'theme-classic' ? 'active' : ''}`}
             onClick={() => changeTheme('theme-classic')}
             title="Classic Anime Theme"
           />
-          <button 
-            className={`theme-button theme-button-dark ${theme === 'theme-dark' ? 'active' : ''}`} 
+          <button
+            className={`theme-button theme-button-dark ${theme === 'theme-dark' ? 'active' : ''}`}
             onClick={() => changeTheme('theme-dark')}
             title="Dark Theme"
           />
         </div>
-        
+
         <div className="chat-messages">
           {messages.map((message, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`message ${message.isUser ? 'user-message' : 'waifu-message'}`}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 marginLeft: message.isUser ? 'auto' : '0',
-                marginRight: message.isUser ? '0' : 'auto'
+                marginRight: message.isUser ? '0' : 'auto',
+                position: 'relative',
+                width: message.isUser ? 'auto' : '80%',
+                minWidth: '280px',
+                maxWidth: '600px',
+                overflow: 'hidden',
+                transition: 'all 0.3s ease'
               }}
             >
-              {message.content}
-              <small style={{ 
-                fontSize: '0.65rem', 
-                opacity: 0.7, 
-                alignSelf: message.isUser ? 'flex-end' : 'flex-start',
-                marginTop: '4px'
+              {message.imageData && (
+                <>
+                  {/* Background image with overlay */}
+                  <div 
+                    className="message-bg"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundImage: `url(data:image/png;base64,${message.imageData})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      filter: 'blur(4px)',
+                      opacity: 0.8,
+                      zIndex: 0,
+                      transition: 'all 0.3s ease'
+                    }}
+                  />
+                  
+                  {/* Image preview toggle button */}
+                  <button
+                    onClick={() => {
+                      const modal = document.getElementById(`image-modal-${index}`);
+                      if (modal) {
+                        modal.style.display = 'flex';
+                        // Force a reflow before setting opacity
+                        modal.offsetHeight;
+                        modal.style.opacity = '1';
+                      }
+                    }}
+                    className="image-toggle-btn"
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      background: 'rgba(0, 0, 0, 0.4)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 2,
+                      backdropFilter: 'blur(4px)',
+                      color: 'white',
+                      transition: 'all 0.2s ease',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
+                    }}
+                  >
+                    <span style={{ fontSize: '18px' }}>🔍</span>
+                  </button>
+
+                  {/* Modal for full image view */}
+                  <div
+                    id={`image-modal-${index}`}
+                    style={{
+                      display: 'none',
+                      position: 'fixed',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      zIndex: 1000,
+                      padding: '20px',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease',
+                      pointerEvents: 'all'
+                    }}
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) {
+                        const modal = document.getElementById(`image-modal-${index}`);
+                        if (modal) {
+                          modal.style.opacity = '0';
+                          setTimeout(() => {
+                            modal.style.display = 'none';
+                          }, 300);
+                        }
+                      }
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute',
+                      maxWidth: '40%',
+                      maxHeight: '40%',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      padding: '10px',
+                      backdropFilter: 'blur(10px)',
+                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                      transform: 'scale(0.95)',
+                      transition: 'all 0.3s ease',
+                      top:'0',
+                      left:'0',
+                      right:'0',
+                      bottom:'0',
+                      zIndex:'999',
+                      pointerEvents: 'auto'
+                    }}>
+                      <img 
+                        src={`data:image/png;base64,${message.imageData}`}
+                        alt="AI Generated Image"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: 'calc(90vh - 100px)',
+                          borderRadius: '8px',
+                          objectFit: 'contain',
+                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+                        }}
+                        onLoad={(e) => {
+                          const modal = document.getElementById(`image-modal-${index}`);
+                          const container = (e.target as HTMLElement).parentElement;
+                          if (modal && container) {
+                            container.style.transform = 'scale(1)';
+                          }
+                        }}
+                      />
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        marginTop: '10px'
+                      }}>
+                        <button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = `data:image/png;base64,${message.imageData}`;
+                            link.download = `waifu-image-${index}.png`;
+                            link.click();
+                          }}
+                          title="Download Image"
+                          style={{
+                            padding: '8px',
+                            background: 'rgba(74, 144, 226, 0.9)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            backdropFilter: 'blur(4px)',
+                            transition: 'all 0.2s ease',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(74, 144, 226, 1)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(74, 144, 226, 0.9)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          ⬇️
+                        </button>
+                        <button
+                          onClick={() => {
+                            const modal = document.getElementById(`image-modal-${index}`);
+                            if (modal) {
+                              modal.style.opacity = '0';
+                              setTimeout(() => {
+                                modal.style.display = 'none';
+                              }, 300);
+                            }
+                          }}
+                          title="Close"
+                          style={{
+                            padding: '8px',
+                            background: 'rgba(226, 74, 74, 0.9)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            backdropFilter: 'blur(4px)',
+                            transition: 'all 0.2s ease',
+                            width: '40px',
+                            height: '40px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(226, 74, 74, 1)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(226, 74, 74, 0.9)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              
+              {/* Message content with increased z-index */}
+              <div style={{ 
+                position: 'relative',
+                zIndex: 1,
+                padding: '15px',
+                background: message.imageData ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
+                borderRadius: '12px',
+                backdropFilter: message.imageData ? 'blur(4px)' : 'none',
+                color: message.imageData ? 'white' : 'inherit',
+                textShadow: message.imageData ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
+                minHeight: message.imageData ? '200px' : 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}>
-                {message.isUser ? 'You' : waifuName} • {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-              </small>
+                {message.content}
+                <small style={{
+                  display: 'block',
+                  fontSize: '0.65rem',
+                  opacity: 0.7,
+                  marginTop: '4px',
+                  textAlign: message.isUser ? 'right' : 'left'
+                }}>
+                  {message.isUser ? 'You' : waifuName} • {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </small>
+              </div>
             </div>
           ))}
           {isLoading && (
@@ -238,7 +572,7 @@ export default function Home() {
           )}
           <div ref={messagesEndRef} />
         </div>
-        
+
         <div className="chat-input-container">
           <input
             type="text"
@@ -249,20 +583,20 @@ export default function Home() {
             className="chat-input"
             disabled={isLoading}
           />
-          <button 
-            onClick={handleSendMessage} 
+          <button
+            onClick={handleSendMessage}
             className="send-button"
             disabled={isLoading}
           >
             Send
           </button>
         </div>
-        
+
         {showImageGen && (
           <div className="image-generator-container mt-6 p-4 border border-primary rounded-lg bg-opacity-10 bg-white backdrop-blur-md">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-bold">Waifu Image Generator</h3>
-              <button 
+              <button
                 onClick={() => setShowImageGen(false)}
                 className="text-sm px-2 py-1 rounded-full bg-primary bg-opacity-20 hover:bg-opacity-30 transition-all"
               >
