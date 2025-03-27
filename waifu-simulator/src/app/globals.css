@@ -17,12 +17,12 @@
   --pastel-gradient-3: #87CEEB; /* Sky Blue */
   
   /* Cyberpunk Neon */
-  --cyber-primary: #00FFFF;     /* Neon Blue */
+  --cyber-primary: #00e4e4bd;     /* Neon Blue */
   --cyber-secondary: #FF1493;   /* Hot Pink */
   --cyber-accent: #8A2BE2;      /* Electric Purple */
   --cyber-background: #1C1C1C;  /* Dark Gray/Black */
   --cyber-text: #FFFFFF;        /* White */
-  --cyber-gradient-1: #00FFFF;  /* Neon Blue */
+  --cyber-gradient-1: #00e0e0;  /* Neon Blue */
   --cyber-gradient-2: #FF1493;  /* Hot Pink */
   --cyber-gradient-3: #8A2BE2;  /* Electric Purple */
   
@@ -119,12 +119,12 @@ body::before {
 .theme-pastel {
   --background: var(--pastel-background);
   --foreground: var(--pastel-text);
-  --primary: var(--pastel-primary);
-  --secondary: var(--pastel-secondary);
-  --accent: var(--pastel-accent);
-  --gradient-1-rgb: 255, 182, 193; /* Soft Pink RGB */
-  --gradient-2-rgb: 216, 191, 216; /* Light Lavender RGB */
-  --gradient-3-rgb: 135, 206, 235; /* Sky Blue RGB */
+  --primary: #FF8FA3;  /* Darker pink for better contrast */
+  --secondary: #B088B0; /* Darker lavender */
+  --accent: #5DADE2;   /* Darker sky blue */
+  --gradient-1-rgb: 255, 143, 163;
+  --gradient-2-rgb: 176, 136, 176;
+  --gradient-3-rgb: 93, 173, 226;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
 
@@ -166,13 +166,13 @@ body::before {
 
 .theme-dark {
   --background: var(--dark-background);
-  --foreground: var(--dark-text);
+  --foreground: #ffffff;  /* Changed to white for better visibility */
   --primary: var(--dark-primary);
   --secondary: var(--dark-secondary);
   --accent: var(--dark-accent);
-  --gradient-1-rgb: 220, 20, 60;   /* Crimson Red RGB */
-  --gradient-2-rgb: 75, 0, 130;    /* Deep Purple RGB */
-  --gradient-3-rgb: 0, 0, 0;       /* Black RGB */
+  --gradient-1-rgb: 220, 20, 60;
+  --gradient-2-rgb: 75, 0, 130;
+  --gradient-3-rgb: 0, 0, 0;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
 
@@ -220,17 +220,19 @@ body::before {
 
 .user-message {
   background-color: var(--secondary);
-  color: var(--background);
+  color: #ffffff;
   align-self: flex-end;
   margin-left: auto;
   border-bottom-right-radius: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .waifu-message {
   background-color: var(--primary);
-  color: var(--foreground);
+  color: #ffffff;
   align-self: flex-start;
   border-bottom-left-radius: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* Typing indicator */

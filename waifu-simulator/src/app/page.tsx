@@ -538,23 +538,26 @@ export default function Home() {
                 position: 'relative',
                 zIndex: 1,
                 padding: '15px',
-                background: message.imageData ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
+                background: message.imageData ? 'rgba(0, 0, 0, 0.7)' : 'transparent',
                 borderRadius: '12px',
-                backdropFilter: message.imageData ? 'blur(4px)' : 'none',
-                color: message.imageData ? 'white' : 'inherit',
-                textShadow: message.imageData ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
+                backdropFilter: message.imageData ? 'blur(8px)' : 'none',
+                color: message.imageData ? '#ffffff' : 'inherit',
+                textShadow: message.imageData ? '0 2px 4px rgba(0,0,0,0.5)' : 'none',
                 minHeight: message.imageData ? '200px' : 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                border: message.imageData ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                boxShadow: message.imageData ? '0 4px 12px rgba(0, 0, 0, 0.3)' : 'none'
               }}>
                 {message.content}
                 <small style={{
                   display: 'block',
                   fontSize: '0.65rem',
-                  opacity: 0.7,
+                  opacity: 0.9,
                   marginTop: '4px',
-                  textAlign: message.isUser ? 'right' : 'left'
+                  textAlign: message.isUser ? 'right' : 'left',
+                  color: message.imageData ? '#ffffff' : 'inherit'
                 }}>
                   {message.isUser ? 'You' : waifuName} • {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </small>
