@@ -338,8 +338,148 @@ export default function Home() {
     }
   };
 
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Function to handle opening the image modal
+  const openImageModal = (imageData: string) => {
+    setCurrentImage(imageData);
+    setShowModal(true);
+  };
+
+  // Function to handle closing the image modal
+  const closeImageModal = () => {
+    setShowModal(false);
+    setTimeout(() => setCurrentImage(null), 300);
+  };
+
   return (
     <div className={`${theme}`}>
+      {/* Image Modal - Moved outside of chat container */}
+      {showModal && currentImage && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-[1000] bg-black bg-opacity-90 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closeImageModal();
+            }
+          }}
+          style={{
+            display: 'flex',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+            padding: '20px',
+            opacity: 1,
+            transition: 'opacity 0.3s ease'
+          }}
+        >
+          <div style={{ 
+            position: 'relative',
+            maxWidth: '90%',
+            maxHeight: '90vh',
+            background: 'rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            padding: '10px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <img 
+              src={`data:image/png;base64,${currentImage}`}
+              alt="AI Generated Image"
+              style={{
+                maxWidth: '100%',
+                maxHeight: 'calc(80vh - 100px)',
+                borderRadius: '8px',
+                objectFit: 'contain',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+              }}
+            />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '10px',
+              marginTop: '10px',
+              width: '100%'
+            }}>
+              <button
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = `data:image/png;base64,${currentImage}`;
+                  link.download = `waifu-image.png`;
+                  link.click();
+                }}
+                title="Download Image"
+                style={{
+                  padding: '8px',
+                  background: 'rgba(74, 144, 226, 0.9)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(4px)',
+                  transition: 'all 0.2s ease',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(74, 144, 226, 1)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(74, 144, 226, 0.9)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                ⬇️
+              </button>
+              <button
+                onClick={closeImageModal}
+                title="Close"
+                style={{
+                  padding: '8px',
+                  background: 'rgba(226, 74, 74, 0.9)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(4px)',
+                  transition: 'all 0.2s ease',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(226, 74, 74, 1)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(226, 74, 74, 0.9)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Waifu Setup Wizard */}
       {showWizard && (
         <div className="wizard-overlay">
@@ -477,237 +617,25 @@ export default function Home() {
 
         <div className="chat-messages">
           {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`message ${message.isUser ? 'user-message' : 'waifu-message'}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                marginLeft: message.isUser ? 'auto' : '0',
-                marginRight: message.isUser ? '0' : 'auto',
-                position: 'relative',
-                width: message.isUser ? 'auto' : '80%',
-                minWidth: '280px',
-                maxWidth: '600px',
-                overflow: 'hidden',
-                transition: 'all 0.3s ease'
-              }}
-            >
+            <div key={index} className={`message ${message.isUser ? 'user-message' : 'waifu-message'}`}>
               {message.imageData && (
-                <>
-                  {/* Background image with overlay */}
-                  <div 
-                    className="message-bg"
+                <div className="message-image-container">
+                  <img
+                    src={`data:image/png;base64,${message.imageData}`}
+                    alt="Generated"
+                    className="message-image"
+                    onClick={() => message.imageData && openImageModal(message.imageData)}
                     style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundImage: `url(data:image/png;base64,${message.imageData})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      filter: 'blur(4px)',
-                      opacity: 0.8,
-                      zIndex: 0,
-                      transition: 'all 0.3s ease'
+                      cursor: 'pointer',
+                      maxWidth: '100%',
+                      borderRadius: '8px',
+                      marginBottom: '10px'
                     }}
                   />
-                  
-                  {/* Image preview toggle button */}
-                  <button
-                    onClick={() => {
-                      const modal = document.getElementById(`image-modal-${index}`);
-                      if (modal) {
-                        modal.style.display = 'flex';
-                        // Force a reflow before setting opacity
-                        modal.offsetHeight;
-                        modal.style.opacity = '1';
-                      }
-                    }}
-                    className="image-toggle-btn"
-                    style={{
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      background: 'rgba(0, 0, 0, 0.4)',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      zIndex: 2,
-                      backdropFilter: 'blur(4px)',
-                      color: 'white',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'scale(1.1)';
-                      e.currentTarget.style.background = 'rgba(0, 0, 0, 0.6)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'scale(1)';
-                      e.currentTarget.style.background = 'rgba(0, 0, 0, 0.4)';
-                    }}
-                  >
-                    <span style={{ fontSize: '18px' }}>🔍</span>
-                  </button>
-
-                  {/* Modal for full image view */}
-                  <div
-                    id={`image-modal-${index}`}
-                    style={{
-                      display: 'none',
-                      position: 'fixed',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      zIndex: 1000,
-                      padding: '20px',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                      pointerEvents: 'all'
-                    }}
-                    onClick={(e) => {
-                      if (e.target === e.currentTarget) {
-                        const modal = document.getElementById(`image-modal-${index}`);
-                        if (modal) {
-                          modal.style.opacity = '0';
-                          setTimeout(() => {
-                            modal.style.display = 'none';
-                          }, 300);
-                        }
-                      }
-                    }}
-                  >
-                    <div style={{
-                      position: 'absolute',
-                      maxWidth: '40%',
-                      maxHeight: '40%',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '12px',
-                      padding: '10px',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                      transform: 'scale(0.95)',
-                      transition: 'all 0.3s ease',
-                      top:'0',
-                      left:'0',
-                      right:'0',
-                      bottom:'0',
-                      zIndex:'999',
-                      pointerEvents: 'auto'
-                    }}>
-                      <img 
-                        src={`data:image/png;base64,${message.imageData}`}
-                        alt="AI Generated Image"
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: 'calc(90vh - 100px)',
-                          borderRadius: '8px',
-                          objectFit: 'contain',
-                          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
-                        }}
-                        onLoad={(e) => {
-                          const modal = document.getElementById(`image-modal-${index}`);
-                          const container = (e.target as HTMLElement).parentElement;
-                          if (modal && container) {
-                            container.style.transform = 'scale(1)';
-                          }
-                        }}
-                      />
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: '10px',
-                        marginTop: '10px'
-                      }}>
-                        <button
-                          onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = `data:image/png;base64,${message.imageData}`;
-                            link.download = `waifu-image-${index}.png`;
-                            link.click();
-                          }}
-                          title="Download Image"
-                          style={{
-                            padding: '8px',
-                            background: 'rgba(74, 144, 226, 0.9)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            backdropFilter: 'blur(4px)',
-                            transition: 'all 0.2s ease',
-                            width: '40px',
-                            height: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(74, 144, 226, 1)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(74, 144, 226, 0.9)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                          }}
-                        >
-                          ⬇️
-                        </button>
-                        <button
-                          onClick={() => {
-                            const modal = document.getElementById(`image-modal-${index}`);
-                            if (modal) {
-                              modal.style.opacity = '0';
-                              setTimeout(() => {
-                                modal.style.display = 'none';
-                              }, 300);
-                            }
-                          }}
-                          title="Close"
-                          style={{
-                            padding: '8px',
-                            background: 'rgba(226, 74, 74, 0.9)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            backdropFilter: 'blur(4px)',
-                            transition: 'all 0.2s ease',
-                            width: '40px',
-                            height: '40px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(226, 74, 74, 1)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(226, 74, 74, 0.9)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
               
-              {/* Message content with increased z-index */}
+              {/* Message content */}
               <div style={{ 
                 position: 'relative',
                 zIndex: 1,
